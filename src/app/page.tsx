@@ -1,6 +1,10 @@
 'use client';
 
-import { Channel, invoke } from '@tauri-apps/api/core';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@radix-ui/react-label';
+import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 
 type Todo = {
@@ -10,41 +14,68 @@ type Todo = {
 };
 
 export default function Page() {
-    const [title, setTitle] = useState<string>();
+    const [title, setTitle] = useState<string>('');
 
     const [todos, setTodos] = useState<Todo[]>([]);
 
+    const getTodos = async () => {
+        await invoke<Todo[]>('list_todos').then((res) => {
+            setTodos(res);
+        });
+    };
+
     const addTodo = async () => {
-        await invoke('add_todo', { title }).then((res) => {
+        await invoke<Todo>('add_todo', { title }).then(() => {
             setTitle('');
         });
-        await invoke('list_todos').then((res) => {
-            setTodos(res as Todo[]);
-        });
+        await getTodos();
     };
 
     useEffect(() => {
         const invokeRust = async () => {
-            await invoke('list_todos').then((res) => {
-                setTodos(res as Todo[]);
-            });
+            await getTodos();
         };
 
         invokeRust();
     }, []);
 
     return (
-        <div className="flex flex-col p-8">
-            <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="border-2 border-black rounded-md p-2"
-            />
-            <button onClick={addTodo} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Add todo
-            </button>
-            {todos.length > 0 && todos.map((todo, idx) => <p key={idx}>{todo.title}</p>)}
+        <div className="flex flex-col py-8 gap-4 container mx-auto">
+            <div className="flex gap-2 items-center">
+                <Input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <Button onClick={addTodo}>Add</Button>
+            </div>
+            {todos.length > 0 && todos.map((todo, idx) => <Todo key={idx} todo={todo} getTodos={getTodos} />)}
         </div>
     );
 }
+
+const Todo: React.FC<{ todo: Todo; getTodos: () => Promise<void> }> = ({ todo, getTodos }) => {
+    const [checked, setChecked] = useState(todo.completed);
+
+    return (
+        <div className="flex flex-col gap-2 p-4 border-2 border-border rounded-md">
+            <div className="flex items-center gap-2">
+                <Checkbox
+                    id={`todo-${todo.id}`}
+                    checked={checked}
+                    onCheckedChange={async (val) => {
+                        await invoke('toggle_todo', { id: todo.id });
+                        setChecked(val as boolean);
+                    }}
+                />
+                <Label htmlFor={`todo-${todo.id}`} className="text-sm">
+                    {todo.title}
+                </Label>
+            </div>
+            <Button
+                onClick={async () => {
+                    invoke('delete_todo', { id: todo.id });
+                    await getTodos();
+                }}
+            >
+                Delete
+            </Button>
+        </div>
+    );
+};

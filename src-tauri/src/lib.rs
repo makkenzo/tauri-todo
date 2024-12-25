@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
-use tauri::{State, Window};
+use tauri::State;
 
 struct Database {
     todos: Mutex<Vec<Todo>>,

@@ -10,7 +10,9 @@
         "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
         "isolatedModules": true,
-        "baseUrl": "src/",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
         "noEmit": true,
         /* Linting */
         "strict": true,
