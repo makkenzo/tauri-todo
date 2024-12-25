@@ -31,6 +31,11 @@ export default function Page() {
         await getTodos();
     };
 
+    const removeTodo = async (id: number) => {
+        await invoke('delete_todo', { id }).then(() => setTodos([]));
+        await getTodos();
+    };
+
     useEffect(() => {
         const invokeRust = async () => {
             await getTodos();
@@ -41,16 +46,22 @@ export default function Page() {
 
     return (
         <div className="flex flex-col py-8 gap-4 container mx-auto">
+            <h1 className="text-center font-semibold text-4xl">ToDo App</h1>
             <div className="flex gap-2 items-center">
-                <Input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <Input
+                    type="text"
+                    value={title}
+                    placeholder="Add a new todo"
+                    onChange={(e) => setTitle(e.target.value)}
+                />
                 <Button onClick={addTodo}>Add</Button>
             </div>
-            {todos.length > 0 && todos.map((todo, idx) => <Todo key={idx} todo={todo} getTodos={getTodos} />)}
+            {todos.length > 0 && todos.map((todo, idx) => <Todo key={idx} todo={todo} removeTodo={removeTodo} />)}
         </div>
     );
 }
 
-const Todo: React.FC<{ todo: Todo; getTodos: () => Promise<void> }> = ({ todo, getTodos }) => {
+const Todo: React.FC<{ todo: Todo; removeTodo: (id: number) => Promise<void> }> = ({ todo, removeTodo }) => {
     const [checked, setChecked] = useState(todo.completed);
 
     return (
@@ -70,8 +81,7 @@ const Todo: React.FC<{ todo: Todo; getTodos: () => Promise<void> }> = ({ todo, g
             </div>
             <Button
                 onClick={async () => {
-                    invoke('delete_todo', { id: todo.id });
-                    await getTodos();
+                    await removeTodo(todo.id);
                 }}
             >
                 Delete
