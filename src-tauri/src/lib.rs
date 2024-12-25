@@ -1,93 +1,98 @@
-use serde::Serialize;
-use tauri::{ipc::Channel, AppHandle};
+use std::sync::Mutex;
 
-struct Database;
+use serde::{Deserialize, Serialize};
+use tauri::{State, Window};
 
-#[derive(serde::Serialize)]
-struct CustomResponse {
-    message: String,
-    other_val: usize,
+struct Database {
+    todos: Mutex<Vec<Todo>>,
 }
 
-async fn some_other_function() -> Option<String> {
-    Some("response".into())
+#[derive(Serialize, Deserialize, Clone)]
+struct Todo {
+    id: usize,
+    title: String,
+    completed: bool,
 }
 
-#[tauri::command]
-async fn my_custom_command(
-    window: tauri::Window,
-    number: usize,
-    _database: tauri::State<'_, Database>,
-) -> Result<CustomResponse, String> {
-    println!("Called from {}", window.label());
-    let result: Option<String> = some_other_function().await;
-    if let Some(message) = result {
-        Ok(CustomResponse {
-            message,
-            other_val: 42 + number,
-        })
-    } else {
-        Err("No result".into())
+impl Database {
+    fn new() -> Self {
+        Database {
+            todos: Mutex::new(Vec::new()),
+        }
+    }
+
+    fn add_todo(&self, title: String) -> Todo {
+        let mut todos = self.todos.lock().unwrap();
+        let id = todos.len() + 1;
+        let todo = Todo {
+            id,
+            title,
+            completed: false,
+        };
+        todos.push(todo.clone());
+        todo
+    }
+
+    fn list_todos(&self) -> Vec<Todo> {
+        let todos = self.todos.lock().unwrap();
+        todos.clone()
+    }
+
+    fn toggle_todo(&self, id: usize) -> Option<Todo> {
+        let mut todos = self.todos.lock().unwrap();
+        if let Some(todo) = todos.iter_mut().find(|t| t.id == id) {
+            todo.completed = !todo.completed;
+            Some(todo.clone())
+        } else {
+            None
+        }
+    }
+
+    fn delete_todo(&self, id: usize) -> Option<Todo> {
+        let mut todos = self.todos.lock().unwrap();
+        if let Some(index) = todos.iter().position(|t| t.id == id) {
+            Some(todos.remove(index))
+        } else {
+            None
+        }
     }
 }
 
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase", tag = "event", content = "data")]
-enum DownloadEvent<'a> {
-    #[serde(rename_all = "camelCase")]
-    Started {
-        url: &'a str,
-        download_id: usize,
-        content_length: usize,
-    },
-    #[serde(rename_all = "camelCase")]
-    Progress {
-        download_id: usize,
-        chunk_length: usize,
-    },
-    #[serde(rename_all = "camelCase")]
-    Finished { download_id: usize },
+#[tauri::command]
+fn add_todo(title: String, database: State<'_, Database>) -> Todo {
+    database.add_todo(title)
 }
 
 #[tauri::command]
-fn download(app: AppHandle, url: String, on_event: Channel<DownloadEvent>) {
-    let content_length = 1000;
-    let download_id = 1;
-
-    on_event
-        .send(DownloadEvent::Started {
-            url: &url,
-            download_id,
-            content_length,
-        })
-        .unwrap();
-
-    for chunk_length in [15, 150, 35, 500, 300] {
-        on_event
-            .send(DownloadEvent::Progress {
-                download_id,
-                chunk_length,
-            })
-            .unwrap();
-    }
-
-    on_event
-        .send(DownloadEvent::Finished { download_id })
-        .unwrap();
+fn list_todos(database: State<'_, Database>) -> Vec<Todo> {
+    database.list_todos()
 }
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name).into()
+fn toggle_todo(id: usize, database: State<'_, Database>) -> Result<Todo, String> {
+    database
+        .toggle_todo(id)
+        .ok_or_else(|| "Todo not found".to_string())
+}
+
+#[tauri::command]
+fn delete_todo(id: usize, database: State<'_, Database>) -> Result<Todo, String> {
+    database
+        .delete_todo(id)
+        .ok_or_else(|| "Todo not found".to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .manage(Database {})
+        .manage(Database::new())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, my_custom_command, download])
+        .invoke_handler(tauri::generate_handler![
+            add_todo,
+            list_todos,
+            toggle_todo,
+            delete_todo
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
