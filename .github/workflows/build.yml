@@ -49,6 +49,9 @@ jobs:
                       # Prevent Rust from complaining about $HOME not matching eid home
                       export HOME=/root
 
+                      # Install pnpm
+                      curl -fsSL https://get.pnpm.io/install.sh | sh -
+
                       # Workaround to CI worker being stuck on Updating crates.io index
                       export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
