@@ -1,0 +1,36 @@
+{
+    "name": "tauri-todo",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "format": "pnpm exec prettier . --write",
+        "tauri": "tauri"
+    },
+    "dependencies": {
+        "@tauri-apps/api": "^2",
+        "@tauri-apps/plugin-opener": "^2",
+        "next": "^15.1.2",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0"
+    },
+    "devDependencies": {
+        "@tauri-apps/cli": "^2",
+        "@trivago/prettier-plugin-sort-imports": "^5.2.0",
+        "@types/node": "22.10.2",
+        "@types/react": "19.0.2",
+        "autoprefixer": "^10.4.20",
+        "eslint": "^9",
+        "eslint-config-next": "15.1.2",
+        "postcss": "^8.4.49",
+        "prettier": "^3.4.2",
+        "prettier-plugin-tailwindcss": "^0.6.9",
+        "tailwindcss": "^3.4.17",
+        "typescript": "~5.6.2"
+    },
+    "packageManager": "pnpm@9.13.2+sha512.88c9c3864450350e65a33587ab801acf946d7c814ed1134da4a924f6df5a2120fd36b46aab68f7cd1d413149112d53c7db3a4136624cfd00ff1846a0c6cef48a"
+}
