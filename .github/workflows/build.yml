@@ -50,7 +50,7 @@ jobs:
                       export HOME=/root
 
                       # Install pnpm
-                      curl -fsSL https://get.pnpm.io/install.sh | sh -
+                      npm install -g pnpm
 
                       # Workaround to CI worker being stuck on Updating crates.io index
                       export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
