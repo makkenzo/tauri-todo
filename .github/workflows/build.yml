@@ -49,9 +49,6 @@ jobs:
                       # Prevent Rust from complaining about $HOME not matching eid home
                       export HOME=/root
 
-                      # Install pnpm
-                      npm install -g pnpm
-
                       # Workaround to CI worker being stuck on Updating crates.io index
                       export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
@@ -66,6 +63,9 @@ jobs:
 
                       # Install frontend dependencies
                       npm install
+
+                      # Install pnpm
+                      npm install -g pnpm
 
                       # Build the application
                       npm run tauri build -- --verbose
